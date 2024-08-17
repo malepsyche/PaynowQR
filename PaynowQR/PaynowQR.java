@@ -95,7 +95,7 @@ public class PaynowQR {
         for (String key : opts.keySet()) {
             Object value = opts.get(key);
             if (value instanceof String) {
-                opts.put(key, value.trim());
+                opts.put(key, ((String)value).trim());
             }
         }
 
@@ -104,16 +104,12 @@ public class PaynowQR {
         p.add(createEntry("00", "01")); // ID 00: Payload Format Indicator (Fixed to '01')
         p.add(createEntry("01", "12")); // ID 01: Point of Initiation Method 11: static, 12: dynamic
 
-        List<Map<String, String>> merchantAccountInfo = new ArrayList<>(); // ID 26: Merchant Account Info Template
+        List<Map<String, Object>> merchantAccountInfo = new ArrayList<>(); // ID 26: Merchant Account Info Template
         merchantAccountInfo.add(createEntry("00", "SG.PAYNOW"));
         merchantAccountInfo.add(createEntry("01", "2")); // 0 for mobile, 2 for UEN. 1 is not used.
         merchantAccountInfo.add(createEntry("02", String.valueOf(opts.get("uen")))); // PayNow UEN
-        merchantAccountInfo.add(createEntry("03", String.valueOf(
-                opts.get("amount") == null || opts.get("amount") == 0 || (Boolean) opts.get("editable") ? 1 : 0))); // Editable
-                                                                                                                    // or
-                                                                                                                    // not
-        merchantAccountInfo.add(createEntry("04", opts.getOrDefault("expiry",
-                LocalDate.now().plusYears(5).format(DateTimeFormatter.ofPattern("yyyyMMdd"))))); // Expiry // date
+        merchantAccountInfo.add(createEntry("03", String.valueOf( (double) opts.get("amount") == 0.00 || (Boolean) opts.get("editable") ? 1 : 0))); // 1 = Payment amount is editable, 0 = Not Editable
+        merchantAccountInfo.add(createEntry("04", (String) opts.getOrDefault("expiry", LocalDate.now().plusYears(5).format(DateTimeFormatter.ofPattern("yyyyMMdd"))))); // Expiry // date
         Map<String, Object> merchantAccountInfoEntry = new HashMap<>();
         merchantAccountInfoEntry.put("id", "26");
         merchantAccountInfoEntry.put("value", merchantAccountInfo);
@@ -128,49 +124,36 @@ public class PaynowQR {
 
         // ID 62: Additional data fields
         Map<String, Object> otherData = new HashMap<>();
-        List<Map<String, String>> additionalFields = new ArrayList<>();
-        additionalFields.add(createEntry("01", String.valueOf(opts.getOrDefault("refNumber", "")))); // ID 01: Bill
-                                                                                                     // Number
+        List<Map<String, Object>> additionalFields = new ArrayList<>();
+        additionalFields.add(createEntry("01", opts.getOrDefault("refNumber", ""))); // ID 01: Bill Number
         otherData.put("id", "62");
         otherData.put("value", additionalFields);
 
         if (opts.containsKey("refNumber")) {
             p.add(otherData);
         }
-
+ 
         StringBuilder str = new StringBuilder();
-        for (Map<String, Object> entry : p) {
-            String id = (String) entry.get("id");
-            Object valueObj = entry.get("value");
-            String value;
-
-            if (valueObj instanceof List) {
-                StringBuilder nestedStr = new StringBuilder();
-                List<Map<String, String>> nestedList = (List<Map<String, String>>) valueObj;
-                for (Map<String, String> nestedEntry : nestedList) {
-                    String nestedId = nestedEntry.get("id");
-                    String nestedValue = nestedEntry.get("value");
-                    nestedStr.append(nestedId)
-                            .append(padLeft(String.valueOf(nestedValue.length()), 2, "0"))
-                            .append(nestedValue);
+        for (Map<String, Object> m : p) {
+            Object value = m.get("value");   
+            if (isListOfMaps(value)) {
+                StringBuilder strToReplaceList = new StringBuilder();
+                @SuppressWarnings("unchecked")
+                List<Map<String, String>> map = (List<Map<String, String>>) value; 
+                for (Map<String, String> entry : map) {
+                    strToReplaceList.append(entry.get("id"));
+                    strToReplaceList.append(padLeft(String.valueOf(entry.get("value").length()), 2, null));
+                    strToReplaceList.append(entry.get("value"));
                 }
-                value = nestedStr.toString();
-            } else {
-                value = valueObj.toString();
+                m.put("value", strToReplaceList);
             }
-
-            str.append(id)
-                    .append(padLeft(String.valueOf(value.length()), 2, "0"))
-                    .append(value);
+            str.append(String.valueOf(m.get("id")));
+            str.append(padLeft(String.valueOf( ((String) m.get("value")).length() ), 2, null));
+            str.append(String.valueOf(m.get("value")));
         }
 
-        // Append "6304" for CRC calculation
         str.append("6304");
-
-        // Calculate CRC16 checksum
-        String checksum = crc16(str.toString());
-        str.append(checksum);
-
+        str.append( padLeft( crc16(str.append("6304").toString()), 4, null ) );
         return str.toString();
     }
 
@@ -180,12 +163,23 @@ public class PaynowQR {
         entry.put("value", value);
         return entry;
     }
-
-    private Map<String, String> createEntry(String id, String value) {
-        Map<String, String> entry = new HashMap<>();
-        entry.put("id", id);
-        entry.put("value", value);
-        return entry;
+    
+    private Boolean isListOfMaps(Object object) {
+        if (object instanceof List<?>) {
+            List<?> list = (List<?>) object;
+            for (Object element : list) {
+                if (!(element instanceof Map<?,?>)) {
+                    return false;
+                }
+                Map<?,?> map = (Map<?,?>) element;
+                for (Map.Entry pair : map.entrySet())
+                if (!(pair.getKey() instanceof String && pair.getValue() instanceof String)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
 }
