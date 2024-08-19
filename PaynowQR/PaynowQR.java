@@ -1,3 +1,4 @@
+package PaynowQR;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -145,7 +146,7 @@ public class PaynowQR {
                     strToReplaceList.append(padLeft(String.valueOf(entry.get("value").length()), 2, null));
                     strToReplaceList.append(entry.get("value"));
                 }
-                m.put("value", strToReplaceList);
+                m.put("value", strToReplaceList.toString());
             }
             str.append(String.valueOf(m.get("id")));
             str.append(padLeft(String.valueOf( ((String) m.get("value")).length() ), 2, null));
