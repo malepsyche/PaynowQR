@@ -16,11 +16,11 @@ public class Main {
         // ));
 
         Map<String, Object> opts = new HashMap<>();
-        opts.put("uen", "201403121W");              // Required: UEN of company
-        opts.put("amount", 50.50);                  // Specify amount of money to pay.
-        opts.put("editable", true);                 // Whether or not to allow editing of payment amount. Defaults to false if amount is specified
-        opts.put("expiry", "20201231");             // Set an expiry date for the Paynow QR code (YYYYMMDD). Defaults to 5 years from now.
-        opts.put("refNumber", "GIT-INV-10001");     // Reference number for Paynow Transaction. Useful for payment reconciliation.
+        opts.put("uen", "T16GB0003C");              // Required: UEN of company
+        opts.put("amount", 1.00);                  // Specify amount of money to pay.
+        opts.put("editable", false);                 // Whether or not to allow editing of payment amount. Defaults to false if amount is specified
+        opts.put("expiry", "");             // Set an expiry date for the Paynow QR code (YYYYMMDD). Defaults to 5 years from now.
+        opts.put("refNumber", "TQINV-10001");     // Reference number for Paynow Transaction. Useful for payment reconciliation.
         opts.put("company", "ACME Pte Ltd.");       // Company name to embed in the QR code. Optional.
 
         PaynowQR qrcode = new PaynowQR(opts);

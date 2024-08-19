@@ -110,7 +110,12 @@ public class PaynowQR {
         merchantAccountInfo.add(createEntry("01", "2")); // 0 for mobile, 2 for UEN. 1 is not used.
         merchantAccountInfo.add(createEntry("02", String.valueOf(opts.get("uen")))); // PayNow UEN
         merchantAccountInfo.add(createEntry("03", String.valueOf( (double) opts.get("amount") == 0.00 || (Boolean) opts.get("editable") ? 1 : 0))); // 1 = Payment amount is editable, 0 = Not Editable
-        merchantAccountInfo.add(createEntry("04", (String) opts.getOrDefault("expiry", LocalDate.now().plusYears(5).format(DateTimeFormatter.ofPattern("yyyyMMdd"))))); // Expiry // date
+        if (opts.get("expiry") == null || opts.get("expiry") == "") {
+            merchantAccountInfo.add(createEntry("04", LocalDate.now().plusYears(5).format(DateTimeFormatter.ofPattern("yyyyMMdd")))); 
+        }
+        else {
+            merchantAccountInfo.add(createEntry("04", (String) opts.get("expiry"))); 
+        }    
         Map<String, Object> merchantAccountInfoEntry = new HashMap<>();
         merchantAccountInfoEntry.put("id", "26");
         merchantAccountInfoEntry.put("value", merchantAccountInfo);
@@ -154,7 +159,6 @@ public class PaynowQR {
         }
 
         str.append("6304");
-        // str.append( padLeft( crc16(str.append("6304").toString()), 4, null ) );
         str.append(padLeft(crc16(str.toString()), 4, null));
         return str.toString();
     }
