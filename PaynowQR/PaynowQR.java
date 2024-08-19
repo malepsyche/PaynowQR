@@ -154,7 +154,8 @@ public class PaynowQR {
         }
 
         str.append("6304");
-        str.append( padLeft( crc16(str.append("6304").toString()), 4, null ) );
+        // str.append( padLeft( crc16(str.append("6304").toString()), 4, null ) );
+        str.append(padLeft(crc16(str.toString()), 4, null));
         return str.toString();
     }
 
